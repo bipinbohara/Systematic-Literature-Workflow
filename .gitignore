@@ -8,5 +8,5 @@ wheels/
 
 # Virtual environments
 .venv
-/fiass_vector
-/pubmed
+fiass_vector/
+pubmed/
