@@ -8,6 +8,5 @@ wheels/
 
 # Virtual environments
 .venv
-/bin
-/include
-/lib
+/fiass_vector
+/pubmed
