@@ -26,24 +26,24 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Initialize FastMCP server
 mcp = FastMCP("pubmed")
 
-@mcp.tool()
-async def search_pubmed_key_words2(key_words: str, num_results: int = 10) -> List[Dict[str, Any]]:
-    logging.info(f"Searching for articles with key words: {key_words}, num_results: {num_results}")
-    """
-    Search for articles on PubMed using key words.
-
-    Args:
-        key_words: Search query string
-        num_results: Number of results to return (default: 10)
-
-    Returns:
-        List of dictionaries containing article information
-    """
-    try:
-        results = await asyncio.to_thread(search_key_words, key_words, num_results)
-        return results
-    except Exception as e:
-        return [{"error": f"An error occurred while searching: {str(e)}"}]
+#@mcp.tool()
+#async def search_pubmed_key_words2(key_words: str, num_results: int = 10) -> List[Dict[str, Any]]:
+#    logging.info(f"Searching for articles with key words: {key_words}, num_results: {num_results}")
+#    """
+#    Search for articles on PubMed using key words.
+#
+#    Args:
+#        key_words: Search query string
+#        num_results: Number of results to return (default: 10)
+#
+#    Returns:
+#        List of dictionaries containing article information
+#    """
+#    try:
+#        results = await asyncio.to_thread(search_key_words, key_words, num_results)
+#        return results
+#    except Exception as e:
+#        return [{"error": f"An error occurred while searching: {str(e)}"}]
     
 @mcp.tool()
 async def search_pubmed_key_words(key_words: str, num_results: int = 10) -> List[Dict[str, Any]]:
