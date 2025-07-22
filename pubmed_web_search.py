@@ -6,7 +6,7 @@ import re
 import requests
 import logging
 import xml.etree.ElementTree as ET
-from pubmed_rag_pipeline import PDF_DIR
+#from pubmed_rag_pipeline import PDF_DIR
 
 def generate_pubmed_search_url(term=None, title=None, author=None, journal=None, 
                                start_date=None, end_date=None, num_results=10):
