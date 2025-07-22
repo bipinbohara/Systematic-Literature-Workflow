@@ -55,20 +55,20 @@ def search_similarity(query):
     results = []
 
     for doc, score in raw_results:
-        if score <= 0.7:  # "good" threshold, tune as needed
-            print(f"Score: {score:.3f} [GOOD]")
-        elif 0.7 <= score <= 1.0:
-            print(f"Score: {score:.3f} [WEAK]")
-        else:
-            print(f"Score: {score:.3f} [VERY WEAK]")
-        print(f"Source: {doc.metadata.get('source', 'N/A')}")
-        print(f"Snippet: {doc.page_content[:200]}")
-        print("---")
-
-        results.append({
-            "source": doc.metadata.get('source', 'N/A'),
-            "score": float(round(score or 0, 3)),
-            "content": doc.page_content.strip()
-            })
-        logging.info(results)
+        # if score <= 0.7:  # "good" threshold, tune as needed
+        #     print(f"Score: {score:.3f} [GOOD]")
+        # elif 0.7 <= score <= 1.0:
+        #     print(f"Score: {score:.3f} [WEAK]")
+        # else:
+        #     print(f"Score: {score:.3f} [VERY WEAK]")
+        # print(f"Source: {doc.metadata.get('source', 'N/A')}")
+        # print(f"Snippet: {doc.page_content[:200]}")
+        # print("---")
+        if score < 1.0:
+            results.append({
+                "source": doc.metadata.get('source', 'N/A'),
+                "score": float(round(score or 0, 3)),
+                "content": doc.page_content.strip()
+                })
+    logging.info(results)
     return results
