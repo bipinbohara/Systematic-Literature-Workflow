@@ -13,7 +13,7 @@ certifi==2025.7.14
 charset-normalizer==3.4.2
 dataclasses-json==0.6.7
 faiss-cpu==1.11.0.post1
-faiss-gpu-cu12==1.11.0
+faiss-gpu-cu11==1.11.0
 filelock==3.18.0
 filetype==1.2.0
 frozenlist==1.7.0
