@@ -69,4 +69,5 @@ def search_similarity(query):
             "score": float(round(score or 0, 3)),
             "content": doc.page_content.strip()
             })
+        logging.info(results)
     return results
