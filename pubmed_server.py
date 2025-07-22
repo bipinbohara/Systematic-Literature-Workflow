@@ -18,7 +18,7 @@ from fiass.preprocess_pdf import vectorize_pdf, search_similarity
 #     raise e
 #from pubmed_rag_pipeline import pdf_to_text
 import shutil
-from pubmed_rag_fetch import get_rag_data
+#from pubmed_rag_fetch import get_rag_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
