@@ -10,6 +10,9 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
 import logging
 
+BASE_DIR   = Path(__file__).resolve().parent
+INDEX_PATH = BASE_DIR / "vector_db"
+DATA_DIR   = BASE_DIR / "data"
 
 def vectorize_pdf():
     
@@ -40,7 +43,7 @@ def vectorize_pdf():
 
 def search_similarity(query):
     #vectorize_pdf()
-    INDEX_PATH = "fiass/vector_db"
+    #INDEX_PATH = "fiass/vector_db"
 
     # Recreate the embeddings object
     embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
