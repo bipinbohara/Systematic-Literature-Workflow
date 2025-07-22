@@ -10,3 +10,4 @@ wheels/
 .venv
 fiass_vector/
 pubmed/
+vllm_deployment/
