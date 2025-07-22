@@ -13,6 +13,9 @@ import logging
 BASE_DIR   = Path(__file__).resolve().parent
 INDEX_PATH = BASE_DIR / "vector_db"
 DATA_DIR   = BASE_DIR / "data"
+print(BASE_DIR)
+print(INDEX_PATH)
+print(DATA_DIR)
 
 def vectorize_pdf():
     
