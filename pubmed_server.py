@@ -8,6 +8,7 @@ import asyncio
 import logging
 from mcp.server.fastmcp import FastMCP
 from pubmed_web_search import search_key_words, search_advanced, get_pubmed_metadata, download_full_text_pdf, deep_paper_analysis
+from fiass.preprocess_pdf import vectorize_pdf, search_similarity
 
 # RAG Pipeline
 # try:
@@ -60,7 +61,7 @@ async def search_pubmed_key_words(key_words: str, num_results: int = 10) -> List
     try:
         #results = await asyncio.to_thread(search_key_words, key_words, num_results)
         logging.info(f"Key word: {key_words}")
-        results = await asyncio.to_thread(get_rag_data, key_words)
+        results = await asyncio.to_thread(search_similarity, key_words)
         logging.info(f"Results: {results}")
         return results
     except Exception as e:
