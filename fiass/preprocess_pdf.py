@@ -43,11 +43,11 @@ def vectorize_pdf():
     vector_store = FAISS.from_documents(docs, embeddings, normalize_L2=True)
     
     # ---- move underlying index to GPU ----
-    res = FAISS.StandardGpuResources()
-    gpu_index = FAISS.index_cpu_to_gpu(res, 0, vector_store.index)
-    vector_store.index = gpu_index        # swap in the GPU handle
+    #res = FAISS.StandardGpuResources()
+    #gpu_index = FAISS.index_cpu_to_gpu(res, 0, vector_store.index)
+    #vector_store.index = gpu_index        # swap in the GPU handle
 
-    vector_store.index = FAISS.index_gpu_to_cpu(vector_store.index)
+    #vector_store.index = FAISS.index_gpu_to_cpu(vector_store.index)
     vector_store.save_local(INDEX_PATH)
     print("end")
 
@@ -62,8 +62,8 @@ def search_similarity(query):
     vector_store = FAISS.load_local(INDEX_PATH, embeddings, normalize_L2=True, allow_dangerous_deserialization=True)
 
     # move to GPU once, cache the handle
-    res = FAISS.StandardGpuResources()
-    vector_store.index = FAISS.index_cpu_to_gpu(res, 0, vector_store.index)
+    #res = FAISS.StandardGpuResources()
+    #vector_store.index = FAISS.index_cpu_to_gpu(res, 0, vector_store.index)
 
     # Now do a similarity search!
     query_vector = embeddings.embed_query(query)
