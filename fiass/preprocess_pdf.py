@@ -26,6 +26,9 @@ def vectorize_pdf():
     load_dotenv()
     preprocessed_directory = os.path.join("data/")
     files = [os.path.join(preprocessed_directory, f) for f in os.listdir(preprocessed_directory) if f.endswith(".pdf")]
+    if not files:
+        logging.warning("No PDF files found in data directory. Skipping vectorization.")
+        return
 
     docs = []
 
