@@ -24,7 +24,8 @@ print(DATA_DIR)
 def vectorize_pdf():
 
     load_dotenv()
-    preprocessed_directory = os.path.join("data/")
+    preprocessed_directory = #os.path.join("data/")
+    preprocessed_directory = DATA_DIR
     files = [os.path.join(preprocessed_directory, f) for f in os.listdir(preprocessed_directory) if f.endswith(".pdf")]
     if not files:
         logging.info("No PDF files found in data directory. Skipping vectorization.")
@@ -41,7 +42,7 @@ def vectorize_pdf():
             doc = Document(page_content=text, metadata={"source": os.path.basename(file)})
             docs.append(doc)
 
-    INDEX_PATH = Path("vector_db")
+    #INDEX_PATH = Path("vector_db")
 
     # Embeddings
     #embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
