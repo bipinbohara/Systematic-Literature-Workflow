@@ -72,7 +72,7 @@ def search_similarity(query):
 
     # -- cross-encoder rerank --------------------------------------------------
     ce_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", activation_fn=torch.nn.Sigmoid())  # tiny & fast
-    ce_inputs = [(query, doc.page_content[:20000])  # clip long docs
+    ce_inputs = [(query, doc.page_content[:50000])  # clip long docs
                  for doc, _ in short_list]
     ce_scores = ce_model.predict(ce_inputs)  # higher = more relevant
 
@@ -88,7 +88,7 @@ def search_similarity(query):
             "source": doc.metadata.get("source", "N/A"),
             "score": float(round(dist, 4)),  # FAISS L2 distance (lower is better)
             "cross_score": round(ce_score, 4),  # Cross-encoder relevance (higher is better)
-            "content": doc.page_content[:1000].strip()
+            "content": doc.page_content.strip()
         }
         for doc, dist, ce_score in combined
         if dist < 1.0  # keep only "good" matches (optional)
