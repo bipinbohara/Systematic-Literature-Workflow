@@ -22,7 +22,7 @@ print(INDEX_PATH)
 print(DATA_DIR)
 
 def vectorize_pdf():
-
+    logging.warning("vectorize_pdf from %s  DATA_DIR=%s", __file__, DATA_DIR)
     load_dotenv()
     #preprocessed_directory = #os.path.join("data/")
     preprocessed_directory = DATA_DIR
