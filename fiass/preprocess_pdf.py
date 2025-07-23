@@ -88,7 +88,7 @@ def search_similarity(query):
             "source": doc.metadata.get("source", "N/A"),
             "score": float(round(dist, 4)),  # FAISS L2 distance (lower is better)
             "cross_score": round(ce_score, 4),  # Cross-encoder relevance (higher is better)
-            "content": doc.page_content.strip()
+            "content": doc.page_content[:40000].strip()
         }
         for doc, dist, ce_score in combined
         if dist < 1.0  # keep only "good" matches (optional)
