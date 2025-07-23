@@ -24,7 +24,7 @@ print(DATA_DIR)
 def vectorize_pdf():
 
     load_dotenv()
-    preprocessed_directory = #os.path.join("data/")
+    #preprocessed_directory = #os.path.join("data/")
     preprocessed_directory = DATA_DIR
     files = [os.path.join(preprocessed_directory, f) for f in os.listdir(preprocessed_directory) if f.endswith(".pdf")]
     if not files:
