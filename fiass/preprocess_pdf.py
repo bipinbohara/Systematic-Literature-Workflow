@@ -33,7 +33,7 @@ def vectorize_pdf():
             doc = Document(page_content=text, metadata={"source": os.path.basename(file)})
             docs.append(doc)
 
-    INDEX_PATH = Path("vector_db")
+    #INDEX_PATH = Path("vector_db")
 
     # Embeddings
     #embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
