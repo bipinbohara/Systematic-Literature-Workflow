@@ -12,6 +12,9 @@ import logging
 from sentence_transformers import CrossEncoder
 import torch
 
+BASE_DIR   = Path(__file__).resolve().parent
+INDEX_PATH = BASE_DIR / "vector_db"
+DATA_DIR   = BASE_DIR / "data"
 
 def vectorize_pdf():
 
