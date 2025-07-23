@@ -51,7 +51,7 @@ def vectorize_pdf():
     print("end")
 
 def search_similarity(query):
-    INDEX_PATH = "vector_db"
+    #INDEX_PATH = "vector_db"
 
     # Recreate the embeddings object
     embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
