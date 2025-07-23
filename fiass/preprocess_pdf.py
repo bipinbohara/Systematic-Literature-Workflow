@@ -60,7 +60,8 @@ def vectorize_pdf():
     print("end")
 
 def search_similarity(query):
-    vectorize_pdf()
+    if not (INDEX_PATH / "index.faiss").exists():
+        vectorize_pdf()
     #INDEX_PATH = "vector_db"
 
     # Recreate the embeddings object
