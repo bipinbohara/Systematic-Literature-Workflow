@@ -43,6 +43,7 @@ async def search_pubmed_key_words(key_words: str, num_results: int = 10) -> List
         #results = await asyncio.to_thread(search_key_words, key_words, num_results)
         logging.info(f"Key word: {key_words}")
         #results = await asyncio.to_thread(search_similarity, key_words)
+        vectorize_pdf()
         results = search_similarity(key_words)
         logging.info(f"Results: {results}")
         return results
