@@ -37,7 +37,8 @@ def vectorize_pdf():
 
     # Embeddings
     #embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
+    embeddings = HuggingFaceEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2", show_progress=True)
+    #embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
 
     vector_store = FAISS.from_documents(docs, embeddings, normalize_L2=True)
 
@@ -55,7 +56,8 @@ def search_similarity(query):
     #INDEX_PATH = "vector_db"
 
     # Recreate the embeddings object
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
+    embeddings = HuggingFaceEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2", show_progress=True)
+    #embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
 
     # Load the persisted vector store
     vector_store = FAISS.load_local(INDEX_PATH, embeddings, normalize_L2=True, allow_dangerous_deserialization=True)
