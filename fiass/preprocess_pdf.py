@@ -65,6 +65,8 @@ def search_similarity(query):
     #embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
 
     # Load the persisted vector store
+    if not (INDEX_PATH / "index.faiss").exists():
+        raise FileNotFoundError("Missing FAISS index at vector_db/index.faiss. Run vectorize_pdf() first.")
     vector_store = FAISS.load_local(INDEX_PATH, embeddings, normalize_L2=True, allow_dangerous_deserialization=True)
 
     # # move to GPU once, cache the handle
