@@ -52,7 +52,7 @@ def vectorize_pdf():
     print("end")
 
 def search_similarity(query):
-    #vectorize_pdf()
+    vectorize_pdf()
     #INDEX_PATH = "fiass/vector_db"
 
     # Recreate the embeddings object
