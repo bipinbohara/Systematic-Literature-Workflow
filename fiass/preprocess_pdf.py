@@ -19,8 +19,8 @@ EMBED_MODEL  = "sentence-transformers/all-MiniLM-L6-v2"
 
 # LLM config (can override via environment)
 LLM_URL      = os.environ.get("LLM_URL",   "http://192.168.0.203:80/v1/chat/completions")
-LLM_MODEL    = os.environ.get("LLM_MODEL", "gpt-4o-mini")
-LLM_API_KEY  = os.environ.get("LLM_API_KEY")
+LLM_MODEL    = os.environ.get("LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B")
+#LLM_API_KEY  = os.environ.get("LLM_API_KEY")
 SYSTEM_PROMPT = (
     "You are a research assistant. Summarize the key findings, methods, and "
     "limitations in 3–6 concise bullets."
@@ -162,7 +162,7 @@ async def _iter_rows(session: aiohttp.ClientSession, vs: FAISS):
             llm_out = await call_llm(
                 session=session,
                 url=LLM_URL,
-                api_key=LLM_API_KEY,
+                #api_key=LLM_API_KEY,
                 model=LLM_MODEL,
                 system_prompt=SYSTEM_PROMPT,
                 user_content=text,
