@@ -22,8 +22,7 @@ LLM_MODEL   = os.environ.get("LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-
 # LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
 
 SYSTEM_PROMPT = (
-    "You are a research assistant. Summarize the key findings, methods, and "
-    "limitations in 3–6 concise bullets."
+    "You are a research assistant. Give me a summary whether the paper has work related to maternal vaccination?"
 )
 TIMEOUT = 600  # seconds
 
