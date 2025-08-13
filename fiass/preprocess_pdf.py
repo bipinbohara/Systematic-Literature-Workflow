@@ -19,7 +19,8 @@ EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 # LLM settings (can override via env)
 LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.203:80/v1/chat/completions")
 LLM_MODEL   = os.environ.get("LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B")
-# LLM_API_KEY = os.environ.get("LLM_API_KEY")
+# LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
+
 SYSTEM_PROMPT = (
     "You are a research assistant. Summarize the key findings, methods, and "
     "limitations in 3–6 concise bullets."
@@ -56,7 +57,13 @@ def iter_faiss_entries(vs: FAISS) -> Iterable[Tuple[int, str, Dict[str, Any]]]:
         yield pos, doc_id, {"source": source, "content": content, "metadata": meta}
 
 # -------- LLM caller (supports chat/completions) --------
-def call_llm(url: str, model: str, system_prompt: str, user_content: str, api_key: Optional[str]) -> str:
+def call_llm(
+    url: str,
+    model: str,
+    system_prompt: str,
+    user_content: str,
+    api_key: Optional[str] = None,  # default None so you don't need to pass it
+) -> str:
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -130,7 +137,7 @@ def main() -> None:
                     model=LLM_MODEL,
                     system_prompt=SYSTEM_PROMPT,
                     user_content=text,
-                    #api_key=LLM_API_KEY,
+                    # api_key=None  # not needed
                 )
             except Exception as e:
                 llm_out = f"[LLM_ERROR] {repr(e)}"
