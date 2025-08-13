@@ -251,9 +251,9 @@ def parse_args():
     p.add_argument("--embed-model", type=str, default=DEFAULT_EMBED_MODEL)
 
     # LLM endpoint
-    p.add_argument("--llm-url", type=str, default=os.environ.get("LLM_URL", "http://127.0.0.1:8000/v1/chat/completions"))
-    p.add_argument("--model", type=str, default=os.environ.get("LLM_MODEL", "gpt-4o-mini"))
-    p.add_argument("--api-key", type=str, default=os.environ.get("LLM_API_KEY"))
+    p.add_argument("--llm-url", type=str, default=os.environ.get("LLM_URL", "http://192.168.0.203/v1/completions"))
+    p.add_argument("--model", type=str, default=os.environ.get("LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"))
+    #p.add_argument("--api-key", type=str, default=os.environ.get("LLM_API_KEY"))
 
     # Concurrency
     p.add_argument("--concurrency", type=int, default=8, help="Max concurrent LLM calls.")
@@ -263,7 +263,7 @@ def parse_args():
     p.add_argument(
         "--system-prompt",
         type=str,
-        default="You are a research assistant. Summarize key findings, methods, and limitations in 3–6 bullets.",
+        default="Does the paper work on maternal vaccination?",
     )
     return p.parse_args()
 
