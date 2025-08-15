@@ -17,8 +17,8 @@ OUTPUT_DIR  = BASE_DIR / "output"
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # LLM settings (can override via env)
-LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.203:80/v1/chat/completions")
-LLM_MODEL   = os.environ.get("LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B")
+LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/chat/completions")
+LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 # LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
 
 SYSTEM_PROMPT = (
