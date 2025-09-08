@@ -86,7 +86,7 @@ def search_similarity(query):
 
     # -- cross-encoder rerank --------------------------------------------------
     ce_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2", activation_fn=torch.nn.Sigmoid())  # tiny & fast
-    ce_inputs = [(query, doc.page_content[:50000])  # clip long docs
+    ce_inputs = [(query, doc.page_content[:200000])  # clip long docs
                  for doc, _ in short_list]
     ce_scores = ce_model.predict(ce_inputs)  # higher = more relevant
 
