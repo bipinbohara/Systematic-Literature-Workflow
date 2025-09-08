@@ -9,6 +9,7 @@ import requests
 from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
+from preprocess_pdf import vectorize_pdf
 
 # -------- Paths & config (no args) --------
 BASE_DIR    = Path(__file__).resolve().parent
@@ -30,7 +31,8 @@ TIMEOUT = 600  # seconds
 # -------- FAISS helpers --------
 def load_vector_store(index_dir: Path) -> FAISS:
     if not (index_dir / "index.faiss").exists():
-        raise FileNotFoundError(f"Missing FAISS index at: {index_dir/'index.faiss'}")
+        vectorize_pdf()
+        #raise FileNotFoundError(f"Missing FAISS index at: {index_dir/'index.faiss'}")
     embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
     return FAISS.load_local(
         index_dir,
