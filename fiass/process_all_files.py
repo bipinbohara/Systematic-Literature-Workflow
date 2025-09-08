@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple, Optional
@@ -102,6 +103,7 @@ def call_llm(
 
 # -------- Main --------
 def main() -> None:
+    start_time = time.time()  # Start timer
     load_dotenv()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUT_DIR / f"faiss_infer_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
@@ -155,6 +157,10 @@ def main() -> None:
             f.flush()
 
     print(f"Done. Results -> {out_path}")
+    end_time = time.time()  # End timer
+    elapsed_time = end_time - start_time
+    print(f"Done. Results -> {out_path}")
+    print(f"Total Execution Time: {elapsed_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
