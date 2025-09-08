@@ -24,7 +24,7 @@ LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 # LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
 
 SYSTEM_PROMPT = (
-   "You are a helpful assistant. Tell me in summary whether the research paper mentions work related with ((MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged) )" +
+   "You are a helpful assistant. Tell me in summary along with a YES/NO decision whether the research paper mentions work related with ((MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged) )" +
    "Avoid repetition. DO not use headings and bullet points. Length: as concise as needed."
 )
 TIMEOUT = 600  # seconds
