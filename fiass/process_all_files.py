@@ -24,7 +24,7 @@ LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 # LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
 
 SYSTEM_PROMPT = (
-   "You are a helpful assistant. Tell me in summary along with a YES/NO decision whether the research paper mentions work related with ((MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged) )" +
+   "You are a helpful assistant. We are conducting a review to determine whether there are phenotypic differences between MSCs from younger donors (<30 years, preferably ≤25) and older donors (>60 years, preferably ≥65). MSCs can come from any human tissue source, such as bone marrow, adipose tissue, umbilical cord, etc. We want only human studies, peer-reviewed original research, in English, and no review articles, conference proceedings, or retracted studies. Middle-aged donors (30-60 years) should be excluded." +
    "Avoid repetition. DO not use headings and bullet points. Length: as concise as needed."
 )
 TIMEOUT = 600  # seconds
