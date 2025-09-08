@@ -22,8 +22,7 @@ LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 # LLM_API_KEY = os.environ.get("LLM_API_KEY")  # not needed for local LLM
 
 SYSTEM_PROMPT = (
-    "You are a research assistant. Give me a summary whether the paper has work related to maternal vaccination?"
-
+   "You are an assistant designed to conduct a systematic review of pre-clinical studies related to mesenchymal stem cells (MSCs) and aging. Follow the steps carefully and output each step clearly.
 )
 TIMEOUT = 600  # seconds
 
