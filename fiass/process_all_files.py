@@ -16,7 +16,8 @@ from preprocess_pdf import vectorize_pdf
 BASE_DIR    = Path(__file__).resolve().parent
 INDEX_DIR   = BASE_DIR / "vector_db"
 OUTPUT_DIR  = BASE_DIR / "output"
-EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+#EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBED_MODEL = "NeuML/pubmedbert-base-embeddings"
 
 # LLM settings (can override via env)
 LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/chat/completions")
