@@ -20,6 +20,7 @@ DATA_DIR   = BASE_DIR / "data"
 print(BASE_DIR)
 print(INDEX_PATH)
 print(DATA_DIR)
+MODEL_NAME="pubmedbert-base-colbert" ## "NeuML/pubmedbert-base-embeddings" ## sentence-transformers/all-MiniLM-L6-v2
 
 def vectorize_pdf():
     logging.warning("vectorize_pdf from %s  DATA_DIR=%s", __file__, DATA_DIR)
@@ -48,7 +49,7 @@ def vectorize_pdf():
     #embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
     
     #embeddings = HuggingFaceEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2", show_progress=True)
-    embeddings = HuggingFaceEmbeddings(model="NeuML/pubmedbert-base-embeddings", show_progress=True)
+    embeddings = HuggingFaceEmbeddings(model=MODEL_NAME, show_progress=True)
     #embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
 
     vector_store = FAISS.from_documents(docs, embeddings, normalize_L2=True)
@@ -69,7 +70,7 @@ def search_similarity(query):
 
     # Recreate the embeddings object
     ##embeddings = HuggingFaceEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2", show_progress=True)
-    embeddings = HuggingFaceEmbeddings(model="NeuML/pubmedbert-base-embeddings", show_progress=True)
+    embeddings = HuggingFaceEmbeddings(model=MODEL_NAME, show_progress=True)
     #embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key="AIzaSyCqsDNnpIT1fXj-ksaFf90_0A1BSL8hu94")
 
     # Load the persisted vector store
