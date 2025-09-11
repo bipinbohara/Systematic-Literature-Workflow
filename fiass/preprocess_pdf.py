@@ -20,7 +20,7 @@ DATA_DIR   = BASE_DIR / "data"
 print(BASE_DIR)
 print(INDEX_PATH)
 print(DATA_DIR)
-MODEL_NAME="pubmedbert-base-colbert" ## "NeuML/pubmedbert-base-embeddings" ## sentence-transformers/all-MiniLM-L6-v2
+MODEL_NAME="NeuML/pubmedbert-base-colbert" ## "NeuML/pubmedbert-base-embeddings" ## sentence-transformers/all-MiniLM-L6-v2
 
 def vectorize_pdf():
     logging.warning("vectorize_pdf from %s  DATA_DIR=%s", __file__, DATA_DIR)
