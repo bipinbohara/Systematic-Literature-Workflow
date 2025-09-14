@@ -26,7 +26,7 @@ OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 # ---------- LLM config ----------
 # If your server only supports /v1/completions, keep the URL as that.
 # If it supports chat, use /v1/chat/completions. This script will try both when needed.
-LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/chat/completions")
+LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/completions")
 LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
