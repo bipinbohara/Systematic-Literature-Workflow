@@ -32,14 +32,23 @@ LLM_API_KEY   = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT       = int(os.environ.get("LLM_TIMEOUT", "600"))
 DEBUG_FIRST_N = int(os.environ.get("DEBUG_FIRST_N", "0"))  # set to e.g. 2 for quick prints
 
-SYSTEM_PROMPT = (
-    "You are a precise classifier. Using only the TITLE and ABSTRACT of a paper, determine whether the paper "
-    "addresses the following query (YES or NO): "
-    '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
-    'AND (aging OR aged). Respond with a concise YES or NO (followed by a very short rationale)'
-)
+# SYSTEM_PROMPT = (
+#     "You are a precise classifier. Using only the TITLE and ABSTRACT of a paper, determine whether the paper "
+#     "addresses the following query (YES or NO): "
+#     '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
+#     'AND (aging OR aged). Respond with a concise YES or NO (followed by a very short rationale)'
+# )
 
-USER_PROMPT_PREFIX = "TITLE: {title}\nABSTRACT: {abstract}"
+# USER_PROMPT_PREFIX = "TITLE: {title}\nABSTRACT: {abstract}"
+
+SYSTEM_PROMPT = (
+    "You are a precise classifier. From a PAPER TITLE alone, decide if the paper addresses what user_prompt questions"
+)
+USER_PROMPT_PREFIX = (
+    "We are conducting a review to determine whether the research paper title and abstract in any way addresses any of the keywords: "
+    '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
+    'and (aging or aged). Please Answer YES or NO.\nTITLE: '
+)
 
 # ---------- HTTP session ----------
 SESSION = requests.Session()
