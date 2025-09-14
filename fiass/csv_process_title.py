@@ -43,8 +43,7 @@ SYSTEM_PROMPT = (
 )
 
 # This is the user message prefix given to the model; the title is appended.
-USER_PROMPT_PREFIX = ("We are conducting a review to determine whether there are phenotypic differences between MSCs from younger donors (<30 years) or older donors (>60 years) If the average age group along with Standard Deviation is like 65 +- 7 this brings a donor of age 59 which is not acceptable, and in case of 24+-7, this brings the age of a doner to 31 and this is not acceptable either and we will not consider such papers. MSCs can come from any human tissue source, such as bone marrow, adipose tissue, umbilical cord, etc. We want only human studies, peer-reviewed original research, in English, and no review articles, conference proceedings, or retracted studies." +
-   "Give me a YES/NO answer with reason as well why the paper meets or does not meet the criteria, Review papers should be labelled as NO, we are not interested on those papers Answer YES or NO.\nTITLE: "
+USER_PROMPT_PREFIX = ("We are conducting a review to determine whether the research paper title in any way addresses (MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged). Please Answer YES or NO.\nTITLE: "
 )
 
 YESNO_RE = re.compile(r'\b(YES|NO)\b', re.IGNORECASE)
