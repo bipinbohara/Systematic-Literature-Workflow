@@ -35,15 +35,11 @@ TIMEOUT     = 600
 
 # ------------ Embedded instructions ("user_prompt" logic) ------------
 SYSTEM_PROMPT = (
-    "You are a precise classifier. From a PAPER TITLE alone, decide if the study is about a " +
-    "'user-prompted' system — i.e., a user's natural-language prompt directly drives the system " +
-    "(LLMs, instruction-following, prompt engineering, chatbots, text-to-*, etc.). " +
-    "If the title is clearly unrelated (e.g., biology/medicine without LLMs, networking, materials), answer NO. " +
-    "Return ONLY one token: YES or NO."
+    "You are a precise classifier. From a PAPER TITLE alone, decide if the paper addresses what user_prompt questions"
 )
 
 # This is the user message prefix given to the model; the title is appended.
-USER_PROMPT_PREFIX = ("We are conducting a review to determine whether the research paper title in any way addresses (MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged). Please Answer YES or NO.\nTITLE: "
+USER_PROMPT_PREFIX = ("We are conducting a review to determine whether the research paper title in any way addresses any of the keywords: (MSC* or “mesenchymal stem cell*” or “mesenchymal stromal cell*“ or ADSC or ASCs or “adipose stem cell*”) and (aging or aged). Please Answer YES or NO.\nTITLE: "
 )
 
 YESNO_RE = re.compile(r'\b(YES|NO)\b', re.IGNORECASE)
