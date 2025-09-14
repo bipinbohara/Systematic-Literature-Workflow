@@ -30,10 +30,10 @@ TIMEOUT     = 600
 
 # ------------ Embedded instructions ("user_prompt" logic) ------------
 SYSTEM_PROMPT = (
-    "You are a precise classifier. From a PAPER TITLE alone, decide if the study is about a "
-    "'user-prompted' system — i.e., a user's natural-language prompt directly drives the system "
-    "(LLMs, instruction-following, prompt engineering, chatbots, text-to-*, etc.). "
-    "If the title is clearly unrelated (e.g., biology/medicine without LLMs, networking, materials), answer NO. "
+    "You are a precise classifier. From a PAPER TITLE alone, decide if the study is about a " +
+    "'user-prompted' system — i.e., a user's natural-language prompt directly drives the system " +
+    "(LLMs, instruction-following, prompt engineering, chatbots, text-to-*, etc.). " +
+    "If the title is clearly unrelated (e.g., biology/medicine without LLMs, networking, materials), answer NO. " +
     "Return ONLY one token: YES or NO."
 )
 
