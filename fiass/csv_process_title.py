@@ -72,7 +72,6 @@ def call_llm(title: str) -> str:
     except Exception:
         text = ""
 
-return text
     # m = YESNO_RE.search(text)
     # if m:
     #     return m.group(1).upper()
@@ -81,6 +80,7 @@ return text
     # if text.strip().upper().startswith("N"):
     #     return "NO"
     # return "NO"  # conservative default
+    return text
 
 def main():
     in_path = Path(INPUT_CSV)
