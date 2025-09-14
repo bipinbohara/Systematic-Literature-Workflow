@@ -17,6 +17,7 @@ DATA_DIR   = BASE_DIR / "csv-data"
 INPUT_CSV  = DATA_DIR / "scopus_file.csv"
 OUTPUT_CSV = DATA_DIR / "scopus_file_results.csv"
 TITLE_COL  = "Title"
+ABSTRACT_COL = "Abstract"
 # We’ll auto-detect abstract column from these candidates:
 ABSTRACT_CANDIDATES: List[str] = [
     "Abstract", "abstract", "ABSTRACT", "AbstractText", "Abstract_Text", "Abstract Text"
@@ -145,12 +146,6 @@ def call_llm(title: str, abstract: str, row_idx: int) -> str:
 
     return text
 
-def _detect_abstract_col(headers: List[str]) -> str:
-    for c in ABSTRACT_CANDIDATES:
-        if c in headers:
-            return c
-    return ""  # not found
-
 def main() -> None:
     if not INPUT_CSV.exists():
         raise SystemExit(f"Input CSV not found at {INPUT_CSV}")
@@ -162,7 +157,7 @@ def main() -> None:
         headers = reader.fieldnames or []
         if TITLE_COL not in headers:
             raise SystemExit(f'Expected title column "{TITLE_COL}" not found. Headers: {headers}')
-        abstract_col = _detect_abstract_col(headers)
+        # abstract_col = _detect_abstract_col(headers)
 
         out_fields = list(headers)
         if OUT_COL not in out_fields:
@@ -173,7 +168,7 @@ def main() -> None:
         count = 0
         for i, row in enumerate(reader):
             title = (row.get(TITLE_COL) or "").strip()
-            abstract = (row.get(abstract_col) or "").strip() if abstract_col else ""
+            abstract = (row.get(ABSTRACT_COL) or "").strip()
             row[OUT_COL] = call_llm(title, abstract, i) if title else ""
             writer.writerow(row)
             count += 1
