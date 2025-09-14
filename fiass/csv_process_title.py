@@ -85,7 +85,7 @@ def _call_completions(title: str) -> str:
     payload = {
         "model": LLM_MODEL,
         "prompt": prompt,
-        "max_tokens": 32,
+        #"max_tokens": 32,
         "temperature": 0.0,
         "stream": False,
     }
@@ -99,7 +99,7 @@ def _call_chat(title: str, url: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"{USER_PROMPT_PREFIX}{json.dumps(title)}"},
         ],
-        "max_tokens": 32,
+        #"max_tokens": 32,
         "temperature": 0.0,
         "stream": False,
     }
