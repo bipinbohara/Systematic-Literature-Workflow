@@ -21,7 +21,7 @@ TITLE_COL  = "Title"
 OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 # ---------- LLM config ----------
-LLM_URL     = "http://192.168.0.205:80/v1/chat/completions"   # change if your server prefers /v1/completions
+LLM_URL     = "http://192.168.0.205:80/v1/completions"   # change if your server prefers /v1/completions
 LLM_MODEL   = "openai/gpt-oss-120b"
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT     = 600
