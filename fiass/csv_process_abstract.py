@@ -36,7 +36,7 @@ SYSTEM_PROMPT = (
     "You are a precise classifier. Using only the TITLE and ABSTRACT of a paper, determine whether the paper "
     "addresses the following query (YES or NO): "
     '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
-    'AND (aging OR aged). Respond with a concise YES or NO (optionally followed by a short rationale).'
+    'AND (aging OR aged). Respond with a concise YES or NO (followed by a very short rationale)'
 )
 
 USER_PROMPT_PREFIX = "TITLE: {title}\nABSTRACT: {abstract}"
