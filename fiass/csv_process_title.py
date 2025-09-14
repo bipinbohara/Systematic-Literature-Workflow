@@ -69,6 +69,7 @@ def call_llm(title: str) -> str:
     data = r.json()
     try:
         text = data["choices"][0]["message"]["content"].strip()
+        print("Text: " + text)
     except Exception:
         text = ""
 
@@ -102,13 +103,14 @@ def main():
 
         for row in reader:
             title = (row.get(TITLE_COL) or "").strip()
-            if not title:
-                row["llm_output"] = "NO"
-            else:
-                try:
-                    row["llm_output"] = call_llm(title)
-                except Exception:
-                    row["llm_output"] = "NO"
+            row["llm_output"] = call_llm(title)
+            # if not title:
+            #     row["llm_output"] = "NO"
+            # else:
+            #     try:
+            #         row["llm_output"] = call_llm(title)
+            #     except Exception:
+            #         row["llm_output"] = "NO"
             writer.writerow(row)
 
     print(f"Done. Wrote: {out_path}")
