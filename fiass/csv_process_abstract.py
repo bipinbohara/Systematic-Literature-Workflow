@@ -78,12 +78,12 @@ def _extract_text(data: Dict[str, Any]) -> str:
     except Exception:
         pass
     # Other custom shapes
-    for k in ("output_text", "response"):
-        if k in data and data[k]:
-            return str(data[k]).strip()
-    if "error" in data:
-        return f"[LLM_ERROR_BODY] {data['error']}"
-    return ""
+    # for k in ("output_text", "response"):
+    #     if k in data and data[k]:
+    #         return str(data[k]).strip()
+    # if "error" in data:
+    #     return f"[LLM_ERROR_BODY] {data['error']}"
+    # return ""
 
 def _post_json(url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     r = SESSION.post(url, headers=HEADERS, json=payload, timeout=TIMEOUT)
