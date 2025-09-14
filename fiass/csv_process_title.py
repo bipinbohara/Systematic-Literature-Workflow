@@ -72,14 +72,15 @@ def call_llm(title: str) -> str:
     except Exception:
         text = ""
 
-    m = YESNO_RE.search(text)
-    if m:
-        return m.group(1).upper()
-    if text.strip().upper().startswith("Y"):
-        return "YES"
-    if text.strip().upper().startswith("N"):
-        return "NO"
-    return "NO"  # conservative default
+return text
+    # m = YESNO_RE.search(text)
+    # if m:
+    #     return m.group(1).upper()
+    # if text.strip().upper().startswith("Y"):
+    #     return "YES"
+    # if text.strip().upper().startswith("N"):
+    #     return "NO"
+    # return "NO"  # conservative default
 
 def main():
     in_path = Path(INPUT_CSV)
@@ -95,19 +96,19 @@ def main():
         if TITLE_COL not in headers:
             raise SystemExit(f'Expected title column "{TITLE_COL}" not found. Headers: {headers}')
 
-        out_fields = headers + (["user_prompt"] if "user_prompt" not in headers else [])
+        out_fields = headers + (["llm_output"] if "user_prompt" not in headers else [])
         writer = csv.DictWriter(f_out, fieldnames=out_fields)
         writer.writeheader()
 
         for row in reader:
             title = (row.get(TITLE_COL) or "").strip()
             if not title:
-                row["user_prompt"] = "NO"
+                row["llm_output"] = "NO"
             else:
                 try:
-                    row["user_prompt"] = call_llm(title)
+                    row["llm_output"] = call_llm(title)
                 except Exception:
-                    row["user_prompt"] = "NO"
+                    row["llm_output"] = "NO"
             writer.writerow(row)
 
     print(f"Done. Wrote: {out_path}")
