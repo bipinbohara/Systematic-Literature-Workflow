@@ -18,8 +18,8 @@ from typing import Optional
 import requests
 
 # ------------ Fixed I/O ------------
-INPUT_CSV  = "/csv-data/csv-MSCormesen-set.csv"
-OUTPUT_CSV = "/csv-data/csv-MSCormesen-set_results.csv"
+INPUT_CSV  = "~/csv-data/csv-MSCormesen-set.csv"
+OUTPUT_CSV = "~/csv-data/csv-MSCormesen-set_results.csv"
 TITLE_COL  = "Title"
 
 # ------------ LLM config (edit if needed) ------------
