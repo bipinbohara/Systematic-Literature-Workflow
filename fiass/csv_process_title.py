@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-import argparse
+"""
+No-args CSV classifier:
+- Reads INPUT_CSV (expects a column named "Title")
+- Calls your LLM to classify whether each title is about a user-prompted system
+- Writes all original columns + ["user_prompt", "user_prompt_reason"] to OUTPUT_CSV
+- Can resume if OUTPUT_CSV already exists (by matching on a key built from Title+DOI when DOI exists, else Title)
+"""
+
 import csv
 import json
 import os
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import requests
 
-# ---------------- Env / Defaults ----------------
-LLM_URL   = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/chat/completions")
-LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
-LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
-TIMEOUT = int(os.environ.get("LLM_TIMEOUT", "600"))
+# ============== Configuration (edit these if needed) ==============
+INPUT_CSV   = "/mnt/data/csv-MSCormesen-set.csv"
+OUTPUT_CSV  = None  # if None, will use "<input>_userprompt.csv"
+TITLE_COL   = "Title"     # fixed per your request
+RESUME      = True        # if True, reuse results already present in OUTPUT_CSV
+DELAY_SECS  = 0.0         # sleep between LLM calls to be gentle on the server
 
-# You can override via --system-prompt-file if you want
-DEFAULT_SYSTEM_PROMPT = (
+# Environment-based LLM settings (same as your setup)
+LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/chat/completions")
+LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
+LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
+TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
+
+# System prompt for "user-prompted" classification
+SYSTEM_PROMPT = (
     "You are a careful research assistant.\n"
     "Task: From the PAPER TITLE alone, decide if the paper is about a 'user-prompted system': "
     "e.g., work where a user's natural-language prompt directly drives the system "
@@ -28,14 +41,9 @@ DEFAULT_SYSTEM_PROMPT = (
     '{"is_user_prompt":"YES|NO","reason":"short explanation"}\n'
 )
 
-# Common title header guesses (you can pass --title-col to force)
-TITLE_GUESSES = [
-    "Title", "title", "Paper Title", "paper_title", "TI", "Document Title",
-    "dc:title", "ArticleTitle", "article_title"
-]
+# ============== LLM helpers ==============
 
-# --------------- LLM -----------------
-def call_llm(url: str, model: str, system_prompt: str, user_content: str,
+def call_llm(url: str, model: str, system_prompt: str, user_prompt: str,
              api_key: Optional[str] = None) -> str:
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -44,7 +52,7 @@ def call_llm(url: str, model: str, system_prompt: str, user_content: str,
     if url.rstrip("/").endswith("/v1/completions"):
         payload = {
             "model": model,
-            "prompt": f"System: {system_prompt}\n\nUser:\n{user_content}",
+            "prompt": f"System: {system_prompt}\n\nUser:\n{user_prompt}",
             "max_tokens": 512,
             "temperature": 0.0,
             "stream": False,
@@ -54,7 +62,7 @@ def call_llm(url: str, model: str, system_prompt: str, user_content: str,
             "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
+                {"role": "user", "content": user_prompt},
             ],
             "max_tokens": 512,
             "temperature": 0.0,
@@ -73,10 +81,10 @@ JSON_RE = re.compile(r"\{.*?\}", re.DOTALL)
 
 def parse_llm_json(raw: str) -> Tuple[str, str]:
     """
-    Try to extract {"is_user_prompt": "YES|NO", "reason": "..."} from model output.
+    Extract {"is_user_prompt": "YES|NO", "reason": "..."} from model output.
     Falls back to heuristic if needed.
     """
-    txt = raw.strip()
+    txt = (raw or "").strip()
     m = JSON_RE.search(txt)
     if m:
         snippet = m.group(0)
@@ -91,100 +99,81 @@ def parse_llm_json(raw: str) -> Tuple[str, str]:
 
     # heuristic fallback
     up = "YES" if "YES" in txt.upper() and "NO" not in txt.upper() else "NO"
-    # keep a short reason
     reason = txt[:280].replace("\n", " ")
     return up, reason
 
-# --------------- CSV Helpers -----------------
-def detect_title_col(headers, forced: Optional[str]) -> str:
-    if forced:
-        if forced in headers:
-            return forced
-        else:
-            raise SystemExit(f"--title-col '{forced}' not found in CSV headers: {list(headers)}")
-    for cand in TITLE_GUESSES:
-        if cand in headers:
-            return cand
-    raise SystemExit(
-        f"Could not auto-detect title column. Headers were: {list(headers)}.\n"
-        f"Pass --title-col <NAME>."
-    )
+# ============== CSV helpers ==============
 
-def load_existing_results(path: Path, key_col: str) -> Dict[str, Tuple[str, str]]:
+def make_key(row: Dict[str, str], title_col: str) -> str:
     """
-    For resume: read already-written rows and remember user_prompt & reason by a key.
-    Key default is the title column to keep it simple (collisions are rare in practice for your use).
+    Prefer Title + DOI (if DOI exists) to avoid collisions; else Title only.
     """
+    title = (row.get(title_col) or "").strip()
+    doi = (row.get("DOI") or row.get("doi") or "").strip()
+    if doi:
+        return f"{title} || {doi}"
+    return title
+
+def load_existing_results(path: Path, title_col: str) -> Dict[str, Tuple[str, str]]:
     done: Dict[str, Tuple[str, str]] = {}
     if not path.exists():
         return done
-    with path.open("r", newline="", encoding="utf-8") as f:
-        r = csv.DictReader(f)
-        if key_col not in r.fieldnames:
-            return done
-        for row in r:
-            up = (row.get("user_prompt") or "").strip().upper()
-            if up in {"YES", "NO"}:
-                done[row[key_col]] = (up, row.get("user_prompt_reason") or "")
+    try:
+        with path.open("r", newline="", encoding="utf-8") as f:
+            r = csv.DictReader(f)
+            # Ensure we have our expected columns
+            if not r.fieldnames or "user_prompt" not in r.fieldnames:
+                return done
+            for row in r:
+                key = make_key(row, title_col)
+                up  = (row.get("user_prompt") or "").strip().upper()
+                if up in {"YES", "NO"}:
+                    done[key] = (up, row.get("user_prompt_reason") or "")
+    except Exception:
+        # If anything goes wrong, just skip resume
+        return {}
     return done
 
-# --------------- Main -----------------
-def main():
-    ap = argparse.ArgumentParser(description="Classify CSV titles for 'user-prompted' YES/NO.")
-    ap.add_argument("-i", "--input", required=True, help="Input CSV path")
-    ap.add_argument("-o", "--output", help="Output CSV path (default: <input>_userprompt.csv)")
-    ap.add_argument("--title-col", help="Exact column name for titles (auto-detect if omitted)")
-    ap.add_argument("--delay", type=float, default=0.0, help="Seconds to sleep between LLM calls")
-    ap.add_argument("--resume", action="store_true", help="Skip rows already in output")
-    ap.add_argument("--system-prompt-file", help="Path to a txt file with custom system prompt")
-    args = ap.parse_args()
+# ============== Main ==============
 
-    in_path = Path(args.input)
+def main():
+    in_path = Path(INPUT_CSV)
     if not in_path.exists():
         raise SystemExit(f"Input not found: {in_path}")
 
-    out_path = Path(args.output) if args.output else in_path.with_name(in_path.stem + "_userprompt.csv")
+    out_path = Path(OUTPUT_CSV) if OUTPUT_CSV else in_path.with_name(in_path.stem + "_userprompt.csv")
 
-    # Load / choose system prompt
-    system_prompt = DEFAULT_SYSTEM_PROMPT
-    if args.system_prompt_file:
-        with open(args.system_prompt_file, "r", encoding="utf-8") as spf:
-            system_prompt = spf.read()
-
-    # For resume, load existing results keyed by title
+    # Prepare resume cache
     existing: Dict[str, Tuple[str, str]] = {}
-    with in_path.open("r", newline="", encoding="utf-8-sig") as f_in:
-        reader = csv.DictReader(f_in)
-        headers = reader.fieldnames or []
-        title_col = detect_title_col(headers, args.title_col)
+    if RESUME:
+        existing = load_existing_results(out_path, TITLE_COL)
 
-    if args.resume:
-        existing = load_existing_results(out_path, key_col=title_col)
-
-    # Prepare writer
     with in_path.open("r", newline="", encoding="utf-8-sig") as f_in, \
          out_path.open("w", newline="", encoding="utf-8") as f_out:
         reader = csv.DictReader(f_in)
         headers = reader.fieldnames or []
-        title_col = detect_title_col(headers, args.title_col)
 
-        # Preserve all original columns + our 2
+        if TITLE_COL not in headers:
+            raise SystemExit(f'Expected title column "{TITLE_COL}" not found. Headers: {headers}')
+
         out_fields = headers + [c for c in ["user_prompt", "user_prompt_reason"] if c not in headers]
         writer = csv.DictWriter(f_out, fieldnames=out_fields)
         writer.writeheader()
 
         processed = 0
         for row in reader:
-            title = (row.get(title_col) or "").strip()
+            title = (row.get(TITLE_COL) or "").strip()
+            key   = make_key(row, TITLE_COL)
+
             if not title:
                 row["user_prompt"] = "NO"
                 row["user_prompt_reason"] = "No title provided."
                 writer.writerow(row)
                 continue
 
-            if args.resume and title in existing:
-                # Carry over from previously computed output
-                up, reason = existing[title]
+            # Resume: reuse existing classification if present
+            if RESUME and key in existing:
+                up, reason = existing[key]
                 row["user_prompt"] = up
                 row["user_prompt_reason"] = reason
                 writer.writerow(row)
@@ -195,7 +184,7 @@ def main():
                 raw = call_llm(
                     url=LLM_URL,
                     model=LLM_MODEL,
-                    system_prompt=system_prompt,
+                    system_prompt=SYSTEM_PROMPT,
                     user_content=f'TITLE: "{title}"',
                     api_key=LLM_API_KEY,
                 )
@@ -208,8 +197,8 @@ def main():
             writer.writerow(row)
             processed += 1
 
-            if args.delay > 0:
-                time.sleep(args.delay)
+            if DELAY_SECS > 0:
+                time.sleep(DELAY_SECS)
 
     print(f"Done. Wrote: {out_path}")
 
