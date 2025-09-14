@@ -17,10 +17,15 @@ from typing import Optional
 
 import requests
 
-# ------------ Fixed I/O ------------
-INPUT_CSV  = "~/csv-data/csv-MSCormesen-set.csv"
-OUTPUT_CSV = "~/csv-data/csv-MSCormesen-set_results.csv"
+# ------------ Fixed I/O (script-relative csv-data/) ------------
+BASE_DIR  = Path(__file__).resolve().parent
+DATA_DIR  = BASE_DIR / "csv-data"
+INPUT_CSV = DATA_DIR / "csv-MSCormesen-set.csv"
+OUTPUT_CSV = DATA_DIR / "csv-MSCormesen-set_results.csv"
 TITLE_COL  = "Title"
+
+# Ensure output directory exists
+OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 # ------------ LLM config (edit if needed) ------------
 LLM_URL     = "http://192.168.0.205:80/v1/chat/completions"   # your local endpoint
@@ -58,7 +63,7 @@ def call_llm(title: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},
         ],
-        "max_tokens": 8,
+        "max_tokens": 16,
         "temperature": 0.0,
         "stream": False,
     }
