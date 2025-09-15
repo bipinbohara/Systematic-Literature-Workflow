@@ -33,9 +33,9 @@ SYSTEM_PROMPT = (
 )
 
 USER_PROMPT_PREFIX = (
-    "We are conducting a review. Determine if the paper is about the keywords: "
+    "We are conducting a review to determine whether the research paper title in any way addresses any of the keywords: "
     '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
-    'and (aging or aged). Reply YES or NO only.\n'
+    'and (aging or aged). Please Answer YES or NO with a concise reasoning: '
 )
 
 # ---------- HTTP session (faster than per-call requests) ----------
