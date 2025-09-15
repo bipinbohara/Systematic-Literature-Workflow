@@ -31,10 +31,7 @@ MAX_TOKENS  = 64  # allow brief reason
 
 # ---------- Prompt (asks for YES/NO + tiny reason, one line) ----------
 SYSTEM_PROMPT = (
-    "You are a precise classifier. Using only the TITLE and ABSTRACT, decide if the paper "
-    'matches this query: (MSC* OR 'mesenchymal stem cell*' OR 'mesenchymal stromal cell*' ' "
-    'OR ADSC OR ASCs OR "adipose stem cell*") AND (aging OR aged). '
-    "Answer concisely on one line as: YES - reason  or  NO - 10 words reason."
+    "You are a precise classifier Answer concisely on one line as: YES - reason  or  NO - 10 words reason."
     "Begin answer with YES NO and then the reasoning. Do not restate the task, and do not add extra lines."
 )
 
