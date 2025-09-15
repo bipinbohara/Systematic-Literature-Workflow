@@ -98,9 +98,6 @@ def _call_completions(user_content: str) -> str:
         "prompt": prompt,
         "max_tokens": MAX_TOKENS,
         "temperature": 0.0,
-        "top_p": 1.0,
-        "stream": False,
-        "stop": ["\n"],  # try to keep one-line output
     }
     data = _post_json(LLM_URL, payload)
     return _extract_text(data)
@@ -114,9 +111,6 @@ def _call_chat(user_content: str, url: str) -> str:
         ],
         "max_tokens": MAX_TOKENS,
         "temperature": 0.0,
-        "top_p": 1.0,
-        "stream": False,
-        "stop": ["\n"],
     }
     data = _post_json(url, payload)
     return _extract_text(data)
