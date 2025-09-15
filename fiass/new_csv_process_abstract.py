@@ -13,9 +13,9 @@ import requests
 
 # ---------- Fixed I/O (script-relative) ----------
 BASE_DIR   = Path(__file__).resolve().parent
-DATA_DIR   = BASE_DIR / "csv-data"
-INPUT_CSV  = DATA_DIR / "csv-MSCormesen-set.csv"
-OUTPUT_CSV = DATA_DIR / "csv-MSCormesen-set_results.csv"
+DATA_DIR    = BASE_DIR / "csv-data"
+INPUT_CSV   = DATA_DIR / "scopus_csvfile.csv"
+OUTPUT_CSV  = DATA_DIR / "scopus_csvfile_results.csv"
 TITLE_COL  = "Title"
 ABSTRACT_COL = "Abstract"
 OUT_COL    = "llm_output"
