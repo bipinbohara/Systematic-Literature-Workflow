@@ -37,7 +37,7 @@ SYSTEM_PROMPT = (
 USER_TMPL = (
     "TITLE: {title}\n" +
     "ABSTRACT: {abstract}\n" +
-    "We are conducting a review to determine whether the research paper title in any way addresses any of the keywords: '(MSC* or 'mesenchymal stem cell*' or 'mesenchymal stromal cell*' or ADSC or ASCs or "adipose stem cell*') 'and (aging or aged). Please Answer YES or NO.\nTITLE: ' "
+    "We are conducting a review to determine whether the research paper title in any way addresses any of the keywords: '(MSC* or 'mesenchymal stem cell*' or 'mesenchymal stromal cell*' or ADSC or ASCs or 'adipose stem cell*') 'and (aging or aged). Please Answer YES or NO.\nTITLE: ' "
 )
 
 # ---------- HTTP session ----------
