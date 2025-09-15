@@ -1,49 +1,48 @@
 #!/usr/bin/env python3
 # Reads:  <script_dir>/csv-data/scopus_csvfile.csv  (must have "Title"; "Abstract" optional)
 # Writes: <script_dir>/csv-data/scopus_csvfile_results.csv
-# Adds one column: llm_output (YES or NO)
+# Adds one column: llm_output (e.g., "YES - mentions MSCs and aging")
 
 import csv
-import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import requests
 
 # ---------- Fixed I/O (script-relative) ----------
-BASE_DIR   = Path(__file__).resolve().parent
-DATA_DIR   = BASE_DIR / "csv-data"
-INPUT_CSV  = DATA_DIR / "scopus_csvfile.csv"
-OUTPUT_CSV = DATA_DIR / "scopus_csvfile_results.csv"
-TITLE_COL  = "Title"
-ABSTRACT_COL = "Abstract"
-OUT_COL    = "llm_output"
+BASE_DIR    = Path(__file__).resolve().parent
+DATA_DIR    = BASE_DIR / "csv-data"
+INPUT_CSV   = DATA_DIR / "scopus_csvfile.csv"
+OUTPUT_CSV  = DATA_DIR / "scopus_csvfile_results.csv"
+TITLE_COL   = "Title"
+ABSTRACT_COL= "Abstract"
+OUT_COL     = "llm_output"
 OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 # ---------- LLM config ----------
-LLM_URL       = os.environ.get("LLM_URL",   "http://192.168.0.205:80/v1/completions")
-LLM_MODEL     = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
-LLM_API_KEY   = os.environ.get("LLM_API_KEY")  # optional
-TIMEOUT       = int(os.environ.get("LLM_TIMEOUT", "600"))
-MAX_TOKENS    = 8   # keep answers short
+# Set LLM_URL to your server; if it only supports chat, set /v1/chat/completions
+LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/completions")
+LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
+LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
+TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
+#MAX_TOKENS  = 24  # allow brief reason
 
-# ---------- Prompts ----------
+# ---------- Prompt (asks for YES/NO + tiny reason, one line) ----------
 SYSTEM_PROMPT = (
     "You are a precise classifier. Using only the TITLE and ABSTRACT, decide if the paper "
     'matches this query: (MSC* OR "mesenchymal stem cell*" OR "mesenchymal stromal cell*" '
     'OR ADSC OR ASCs OR "adipose stem cell*") AND (aging OR aged). '
-    "Return exactly ONE token: YES or NO."
+    "Answer concisely on one line as: YES - <≤10 words reason>  or  NO - <≤10 words reason>. "
+    "Do not restate the task, and do not add extra lines."
 )
 
 USER_TMPL = (
     "TITLE: {title}\n"
     "ABSTRACT: {abstract}\n"
-    "Answer (YES or NO) only:"
+    "Reply now in the exact format above:"
 )
-
-YESNO_RE = re.compile(r"\b(YES|NO)\b", re.IGNORECASE)
 
 # ---------- HTTP session ----------
 SESSION = requests.Session()
@@ -72,7 +71,7 @@ def _extract_text(data: Dict[str, Any]) -> str:
             return txt.strip()
     except Exception:
         pass
-    # Other custom shapes
+    # Fallbacks
     for k in ("output_text", "response"):
         if k in data and data[k]:
             return str(data[k]).strip()
@@ -87,19 +86,21 @@ def _post_json(url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     return r.json()
 
 def _build_user_content(title: str, abstract: str) -> str:
-    # Simple safe strings (avoid double-quoting with json.dumps here)
     t = (title or "").strip()
     a = (abstract or "").strip()
     return USER_TMPL.format(title=t, abstract=a)
 
 def _call_completions(user_content: str) -> str:
+    # Keep reply short; stop at first newline to discourage rambling.
     prompt = f"System: {SYSTEM_PROMPT}\n\nUser:\n{user_content}"
     payload = {
         "model": LLM_MODEL,
         "prompt": prompt,
-        "max_tokens": MAX_TOKENS,
+        #"max_tokens": MAX_TOKENS,
         "temperature": 0.0,
+        "top_p": 1.0,
         "stream": False,
+        "stop": ["\n"],  # try to keep one-line output
     }
     data = _post_json(LLM_URL, payload)
     return _extract_text(data)
@@ -111,30 +112,17 @@ def _call_chat(user_content: str, url: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
-        "max_tokens": MAX_TOKENS,
+        #"max_tokens": MAX_TOKENS,
         "temperature": 0.0,
+        "top_p": 1.0,
         "stream": False,
+        "stop": ["\n"],
     }
     data = _post_json(url, payload)
     return _extract_text(data)
 
-def _to_yes_no(text: str) -> str:
-    """Normalize any reply to strictly YES or NO."""
-    if not text:
-        return "NO"
-    m = YESNO_RE.search(text)
-    if m:
-        return m.group(1).upper()
-    # Fallback heuristics
-    up = text.strip().upper()
-    if up.startswith("Y"):
-        return "YES"
-    if up.startswith("N"):
-        return "NO"
-    return "NO"
-
 def call_llm(title: str, abstract: str) -> str:
-    """Call configured endpoint; fallback to chat endpoint if completions 404s."""
+    """Call the configured endpoint; if /v1/completions 404s, retry once with /v1/chat/completions."""
     user_content = _build_user_content(title, abstract)
     url = LLM_URL.rstrip("/")
     is_chat = url.endswith("/v1/chat/completions")
@@ -147,13 +135,14 @@ def call_llm(title: str, abstract: str) -> str:
             try:
                 raw = _call_chat(user_content, chat_url)
             except Exception:
-                return "NO"
+                return f"[LLM_ERROR] {e}"
         else:
-            return "NO"
-    except Exception:
-        return "NO"
+            return f"[LLM_ERROR] {e}"
+    except Exception as e:
+        return f"[LLM_ERROR] {e}"
 
-    return raw
+    # Compact to a single line without changing the content (no YES/NO mapping)
+    return re.sub(r"\s+", " ", raw).strip()
 
 def main() -> None:
     if not INPUT_CSV.exists():
@@ -166,12 +155,7 @@ def main() -> None:
         headers = reader.fieldnames or []
         if TITLE_COL not in headers:
             raise SystemExit(f'Expected title column "{TITLE_COL}" not found. Headers: {headers}')
-        if ABSTRACT_COL not in headers:
-            # If your CSV sometimes lacks Abstract, you can set ABSTRACT_COL="" and handle gracefully
-            print(f'Warning: abstract column "{ABSTRACT_COL}" not found; proceeding with title only.')
-            abstract_missing = True
-        else:
-            abstract_missing = False
+        abstract_missing = ABSTRACT_COL not in headers
 
         out_fields = list(headers)
         if OUT_COL not in out_fields:
@@ -183,7 +167,7 @@ def main() -> None:
         for row in reader:
             title = (row.get(TITLE_COL) or "").strip()
             abstract = (row.get(ABSTRACT_COL) or "").strip() if not abstract_missing else ""
-            row[OUT_COL] = call_llm(title, abstract) if title else "NO"
+            row[OUT_COL] = call_llm(title, abstract) if title else "NO - missing title"
             writer.writerow(row)
             count += 1
 
