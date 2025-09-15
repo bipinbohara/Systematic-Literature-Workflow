@@ -29,10 +29,7 @@ LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
 
 SYSTEM_PROMPT = (
-    "You are a precise classifier. From a PAPER TITLE (and optional ABSTRACT), decide if the paper addresses "
-    "whether it involves any of the keywords: "
-    '(MSC* or "mesenchymal stem cell*" or "mesenchymal stromal cell*" or ADSC or ASCs or "adipose stem cell*") '
-    'and (aging or aged). Answer strictly YES or NO.'
+    "You are a precise classifier. From a PAPER TITLE alone, decide if the paper addresses what user_prompt questions"
 )
 
 USER_PROMPT_PREFIX = (
