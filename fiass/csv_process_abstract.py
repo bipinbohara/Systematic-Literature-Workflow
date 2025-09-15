@@ -41,7 +41,7 @@ SYSTEM_PROMPT = (
 USER_TMPL = (
     "TITLE: {title}\n"
     "ABSTRACT: {abstract}\n"
-    "Reply now in the exact format above:"
+    "Answer concisely on one line as: YES - reason  or  NO - 10 words reason. Begin answer with YES NO and then the reasoning. Do not restate the task, and do not add extra lines."
 )
 
 # ---------- HTTP session ----------
