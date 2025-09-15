@@ -27,7 +27,7 @@ LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/completions"
 LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
-#MAX_TOKENS  = 24  # allow brief reason
+MAX_TOKENS  = 24  # allow brief reason
 
 # ---------- Prompt (asks for YES/NO + tiny reason, one line) ----------
 SYSTEM_PROMPT = (
@@ -96,7 +96,7 @@ def _call_completions(user_content: str) -> str:
     payload = {
         "model": LLM_MODEL,
         "prompt": prompt,
-        #"max_tokens": MAX_TOKENS,
+        "max_tokens": MAX_TOKENS,
         "temperature": 0.0,
         "top_p": 1.0,
         "stream": False,
@@ -112,7 +112,7 @@ def _call_chat(user_content: str, url: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
-        #"max_tokens": MAX_TOKENS,
+        "max_tokens": MAX_TOKENS,
         "temperature": 0.0,
         "top_p": 1.0,
         "stream": False,
