@@ -153,7 +153,7 @@ def call_llm(title: str, abstract: str) -> str:
     except Exception:
         return "NO"
 
-    return _to_yes_no(raw)
+    return raw
 
 def main() -> None:
     if not INPUT_CSV.exists():
