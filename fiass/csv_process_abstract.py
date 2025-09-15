@@ -42,7 +42,7 @@ USER_TMPL = (
     "TITLE: {title}\n" +
     "ABSTRACT: {abstract}\n" +
     "Using only the TITLE and ABSTRACT, decide if the paper " +
-    'matches this query: (MSC* OR 'mesenchymal stem cell*' OR 'mesenchymal stromal cell*' ''OR ADSC OR ASCs OR 'adipose stem cell*') AND (aging OR aged). " +
+    " 'matches this query: (MSC* OR 'mesenchymal stem cell*' OR 'mesenchymal stromal cell*' ''OR ADSC OR ASCs OR 'adipose stem cell*') AND (aging OR aged). " +
     "Begin your Answer with YES - reason  or  NO - 20 words reason. Do not restate the task, and do not add extra lines."
 )
 
