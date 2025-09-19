@@ -3,7 +3,7 @@
 ###
 Login to your account on the GPU cluster, then:
 ```
-Clone this repository: https://github.com/bipinbohara/pubmed-mcp-rag.git
+Clone this repository: https://github.com/bipinbohara/Systematic-Literature-Workflow.git
 ```
 
 ## Step 1:
