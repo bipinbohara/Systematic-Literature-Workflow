@@ -23,7 +23,8 @@ OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 # ---------- LLM config ----------
 # Prefer setting these via env if you change endpoints/models later.
-LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/completions")
+#LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.205:80/v1/completions")
+LLM_URL     = os.environ.get("LLM_URL", "http://192.168.0.213:80/v1/completions")
 LLM_MODEL   = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # optional
 TIMEOUT     = int(os.environ.get("LLM_TIMEOUT", "600"))
