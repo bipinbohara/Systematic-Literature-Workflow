@@ -74,6 +74,11 @@ def _extract_text(data: Dict[str, Any]) -> str:
         return f"[LLM_ERROR_BODY] {data['error']}"
     return ""
 
+def _postprocess(text: str) -> str:
+    t = text.strip()
+    # Keep just first line to avoid rambles
+    return t.splitlines()[0][:1000]
+    
 def _post_json(url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     r = SESSION.post(url, headers=HEADERS, json=payload, timeout=TIMEOUT)
     if r.status_code != 200:
@@ -167,7 +172,7 @@ def main() -> None:
             if ABSTRACT_COL not in row:
                 row[ABSTRACT_COL] = abstract  # will be ""
 
-            row[OUT_COL] = call_llm(title, abstract) if title else ""
+            row[OUT_COL] = _postprocess(call_llm(title, abstract)) if title else ""
             writer.writerow(row)
             count += 1
 
