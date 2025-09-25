@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import requests
+import re
 
 # ---------- Fixed I/O (script-relative) ----------
 BASE_DIR   = Path(__file__).resolve().parent
@@ -76,8 +77,21 @@ def _extract_text(data: Dict[str, Any]) -> str:
 
 def _postprocess(text: str) -> str:
     t = text.strip()
-    # Keep just first line to avoid rambles
-    return t.splitlines()[0][:1000]
+
+    # If the model echoed "Assistant:" somewhere, keep the last segment after it.
+    parts = re.split(r'(?i)\bAssistant\s*:\s*', t)
+    if len(parts) > 1:
+        t = parts[-1].lstrip()
+
+    # Remove any lingering role tags like "User:", "System:", "Assistant:" inside the text
+    t = re.sub(r'(?im)^(?:User|System|Assistant)\s*:\s*', '', t).strip()
+
+    # Replace all newlines and tabs with a single space
+    t = re.sub(r'[\r\n\t]+', ' ', t)
+
+    # Collapse multiple spaces
+    t = re.sub(r' +', ' ', t)
+    return t
     
 def _post_json(url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     r = SESSION.post(url, headers=HEADERS, json=payload, timeout=TIMEOUT)
