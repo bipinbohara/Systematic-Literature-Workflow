@@ -141,7 +141,8 @@ def build_system_prompt(cfg: Dict) -> str:
 
 def load_vector_store(index_dir: Path) -> FAISS:
     if not (index_dir / "index.faiss").exists():
-        raise FileNotFoundError(f"FAISS index not found at {index_dir}. Build it first.")
+        vectorize_pdf()
+        #raise FileNotFoundError(f"FAISS index not found at {index_dir}. Build it first.")
     embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
     return FAISS.load_local(
         index_dir,
