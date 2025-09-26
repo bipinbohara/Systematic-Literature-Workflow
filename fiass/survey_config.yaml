@@ -1,0 +1,54 @@
+# High-level purpose for any field
+domain_description: >
+  Produce a single integrated, scholarly survey synthesizing the included research papers.
+  Focus on cross-study patterns, methodological rigor, and open questions.
+
+# Screening rules (tweak freely per corpus)
+inclusion_exclusion:
+  include_if:
+    - "Peer-reviewed research articles"
+    - "Written in English"
+  exclude_if:
+    - "Non-scholarly sources"
+    - "Duplicate or retracted works"
+  domain_rules: []   # e.g., "Human-only studies", "Exclude preprints", etc.
+
+# What to extract into hidden notes per paper
+extraction_schema:
+  - "Study type and setting"
+  - "Problem/task definition"
+  - "Datasets/benchmarks or workloads"
+  - "Methods/architectures/algorithms"
+  - "Metrics/evaluation criteria"
+  - "Key findings (directionality, effect size if available)"
+  - "Limitations/confounders/threats to validity"
+
+# Outline of the *single* survey
+survey_outline:
+  - "Title"
+  - "Abstract"
+  - "1. Introduction"
+  - "2. Background and Definitions"
+  - "3. Corpus and Screening Criteria"
+  - "4. Taxonomy of Approaches / Study Designs"
+  - "5. Methods and Evaluation Protocols"
+  - "6. Results and Cross-Study Synthesis"
+  - "7. Confounders and Threats to Validity"
+  - "8. Methodological Pitfalls and Bias"
+  - "9. Open Problems and Future Directions"
+  - "10. Limitations"
+  - "11. Conclusion"
+  - "References"
+
+# In-text citation key format (pick one: filename | author_year | title_year)
+citation:
+  style: filename
+  fallback: filename
+
+# Optional stronger guardrails / tone
+system_prompt_prefix: >
+  You are a meticulous scholarly assistant. Enforce the inclusion/exclusion criteria exactly.
+  Produce one cohesive synthesis (no per-paper summaries). Use neutral academic tone.
+
+# Optional: force a specific title instead of letting the model choose
+title_override:
