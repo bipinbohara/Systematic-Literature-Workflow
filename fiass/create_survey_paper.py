@@ -10,6 +10,7 @@ import yaml
 from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
+from preprocess_pdf import vectorize_pdf
 
 # ------------------------- Paths & IO -------------------------
 BASE_DIR   = Path(__file__).resolve().parent
