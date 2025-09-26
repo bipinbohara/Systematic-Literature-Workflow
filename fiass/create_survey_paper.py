@@ -1,3 +1,25 @@
+#!/usr/bin/env python3
+"""
+create_survey_paper.py
+- Builds ONE integrated survey (Markdown) from all papers in a FAISS vector_db.
+- No per-paper summaries in the output; only a unified synthesis.
+- Overwrites a single file: output/literature_survey.md
+
+Env vars you can set:
+  LLM_URL="http://<host>:<port>/v1/chat/completions"
+  LLM_MODEL="openai/gpt-oss-120b"
+  LLM_API_KEY="<optional>"
+  EMBED_MODEL="NeuML/pubmedbert-base-embeddings"
+  VECTOR_DB_DIR="/abs/path/to/vector_db"       # optional override
+  AUTO_BUILD_VECTOR_DB="1"                     # call preprocess_pdf.vectorize_pdf() if index missing
+  MAX_OUTPUT_TOKENS_NOTES="900"
+  MAX_OUTPUT_TOKENS_SURVEY="4096"
+  CHUNK_CHAR_LIMIT="4800"
+  WRITE_MARKDOWN="1"                           # always 1 for this script
+  WRITE_LATEX="0"                              # keep 0 to avoid extra files
+  SURVEY_BASENAME="literature_survey"          # final filename (no timestamp)
+"""
+
 import os
 import json
 import time
@@ -6,144 +28,168 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
 import requests
-import yaml
 from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from preprocess_pdf import vectorize_pdf
+from preprocess_pdf import vectorize_pdf 
 
 # ------------------------- Paths & IO -------------------------
 BASE_DIR   = Path(__file__).resolve().parent
-INDEX_DIR  = BASE_DIR / "vector_db"
+DEFAULT_INDEX_DIR = BASE_DIR / "vector_db"
 OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Config file (YAML). You can override via env: SURVEY_CONFIG=...
-CONFIG_PATH = Path(os.environ.get("SURVEY_CONFIG", BASE_DIR / "survey_config.yaml"))
+# Optional overrides
+VECTOR_DB_DIR_ENV = os.environ.get("VECTOR_DB_DIR")
+AUTO_BUILD = os.environ.get("AUTO_BUILD_VECTOR_DB", "0") == "1"
 
-# Embedding model must match your FAISS index
-EMBED_MODEL = os.environ.get("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# Embedding model must match how the index was built
+EMBED_MODEL = os.environ.get("EMBED_MODEL", "NeuML/pubmedbert-base-embeddings")
 
-# LLM endpoint defaults (override with env if needed)
+# LLM endpoint defaults (chat endpoint strongly recommended)
 LLM_URL     = os.environ.get("LLM_URL",   "http://192.168.0.213:8080/v1/completions")
 LLM_MODEL   = os.environ.get("LLM_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8")
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # often not needed for local
 
 TIMEOUT_SECONDS = int(os.environ.get("TIMEOUT_SECONDS", "600"))
 
-# Budgets
+# Budgets (sane defaults to avoid server 500s)
 MAX_OUTPUT_TOKENS_NOTES  = int(os.environ.get("MAX_OUTPUT_TOKENS_NOTES", "200000"))
 MAX_OUTPUT_TOKENS_SURVEY = int(os.environ.get("MAX_OUTPUT_TOKENS_SURVEY", "200000"))
 CHUNK_CHAR_LIMIT         = int(os.environ.get("CHUNK_CHAR_LIMIT", "200000"))
 
-# Output toggles
-WRITE_MARKDOWN  = os.environ.get("WRITE_MARKDOWN", "1") == "1"
-WRITE_LATEX     = os.environ.get("WRITE_LATEX", "1") == "1"
+# Output toggles — single file (no timestamp), LaTeX off by default
+WRITE_MARKDOWN  = True
+WRITE_LATEX     = os.environ.get("WRITE_LATEX", "0") == "1"  # keep false to avoid extra files
 SURVEY_BASENAME = os.environ.get("SURVEY_BASENAME", "literature_survey")
 
+# ------------------------- Domain-agnostic defaults -------------------------
+DEFAULT_SYSTEM_PROMPT_PREFIX = (
+    "You are a meticulous scholarly assistant. Enforce the inclusion/exclusion criteria exactly. "
+    "Produce one cohesive synthesis (no per-paper summaries). Use neutral academic tone."
+)
+
+DEFAULT_DOMAIN_DESCRIPTION = (
+    "Produce a single integrated, scholarly survey synthesizing the included research papers. "
+    "Focus on cross-study patterns, methodological rigor, and open questions."
+)
+
+INCLUSION_EXCLUSION = {
+    "include_if": [
+        "Peer-reviewed research articles",
+        "Written in English",
+    ],
+    "exclude_if": [
+        "Non-scholarly sources",
+        "Duplicate or retracted works",
+    ],
+    "domain_rules": [
+        # Put domain-specific rules here (optional), e.g.,
+        # "Human-only original research",
+        # "Exclude conference abstracts and reviews",
+    ],
+}
+
+EXTRACTION_SCHEMA = [
+    "Study type and setting (e.g., human/animal/simulated/system evaluation)",
+    "Problem/task definition and scope",
+    "Datasets or benchmarks (or system workloads)",
+    "Methods/architectures/algorithms/protocols",
+    "Metrics/evaluation criteria",
+    "Key findings (directionality, effect sizes if available)",
+    "Limitations/confounders/threats to validity"
+]
+
+SURVEY_OUTLINE = [
+    "Title",
+    "Abstract",
+    "1. Introduction",
+    "2. Background and Definitions",
+    "3. Corpus and Screening Criteria",
+    "4. Taxonomy of Approaches / Study Designs",
+    "5. Methods and Evaluation Protocols",
+    "6. Results and Cross-Study Synthesis",
+    "7. Confounders and Threats to Validity",
+    "8. Methodological Pitfalls and Bias",
+    "9. Open Problems and Future Directions",
+    "10. Limitations",
+    "11. Conclusion",
+    "References"
+]
+
+CITATION_STYLE = "filename"  # "filename" | "author_year" | "title_year"
+CITATION_FALLBACK = "filename"
+TITLE_OVERRIDE = None  # or set a fixed title string
+
 # ------------------------- Helpers -------------------------
-def load_yaml_config(path: Path) -> Dict:
-    if path.exists():
-        with path.open("r", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-    else:
-        cfg = {}
-    return apply_default_config(cfg)
-
-def apply_default_config(cfg: Dict) -> Dict:
-    # Defaults for a generic academic survey
-    defaults = {
-        "domain_description": (
-            "Produce a single scholarly survey that synthesizes the current state of knowledge for the target field."
-        ),
-        "inclusion_exclusion": {
-            "include_if": [
-                "Peer-reviewed research articles",
-                "Written in English",
-            ],
-            "exclude_if": [
-                "Non-scholarly sources",
-                "Duplicate/retracted papers",
-            ],
-            # Optional domain-specific guardrails (leave empty for generic)
-            "domain_rules": []
-        },
-        # What facts to extract into hidden notes per paper
-        "extraction_schema": [
-            "Study type and setting (e.g., human/animal/simulated/system evaluation)",
-            "Problem/task definition and scope",
-            "Datasets or benchmarks (or system workloads)",
-            "Methods/architectures/algorithms/protocols",
-            "Metrics/evaluation criteria",
-            "Key findings (directionality, effect sizes if available)",
-            "Limitations/confounders/threats to validity"
-        ],
-        # Outline for the integrated survey
-        "survey_outline": [
-            "Title",
-            "Abstract",
-            "1. Introduction",
-            "2. Background and Definitions",
-            "3. Corpus and Screening Criteria",
-            "4. Taxonomy of Approaches / Study Designs",
-            "5. Methods and Evaluation Protocols",
-            "6. Results and Cross-Study Synthesis",
-            "7. Confounders and Threats to Validity",
-            "8. Methodological Pitfalls and Bias",
-            "9. Open Problems and Future Directions",
-            "10. Limitations",
-            "11. Conclusion",
-            "References"
-        ],
-        # How to render in-text citations and references
-        "citation": {
-            "style": "filename",  # "filename" | "author_year" | "title_year"
-            "fallback": "filename"
-        },
-        # System prompt prefix to steer tone/rigor (domain-agnostic by default)
-        "system_prompt_prefix": (
-            "You are a meticulous scholarly assistant. Enforce the inclusion/exclusion criteria. "
-            "Create only an integrated survey—no per-paper summaries."
-        ),
-        # Optional: title override (else model writes it)
-        "title_override": None
-    }
-    # Merge shallowly
-    merged = {**defaults, **cfg}
-    # Deep-merge a few keys
-    for k in ("inclusion_exclusion", "citation"):
-        merged[k] = {**defaults[k], **cfg.get(k, {})}
-    if "survey_outline" not in cfg:
-        merged["survey_outline"] = defaults["survey_outline"]
-    if "extraction_schema" not in cfg:
-        merged["extraction_schema"] = defaults["extraction_schema"]
-    return merged
-
-def build_system_prompt(cfg: Dict) -> str:
-    parts = [cfg.get("system_prompt_prefix", "")]
-    desc  = cfg.get("domain_description", "")
-    if desc:
-        parts.append(desc)
-
-    inc = cfg.get("inclusion_exclusion", {})
+def build_system_prompt() -> str:
+    parts = [DEFAULT_SYSTEM_PROMPT_PREFIX, DEFAULT_DOMAIN_DESCRIPTION]
+    inc = INCLUSION_EXCLUSION
     include_if = inc.get("include_if", [])
     exclude_if = inc.get("exclude_if", [])
     domain_rules = inc.get("domain_rules", [])
-
-    if include_if or exclude_if or domain_rules:
-        parts.append("Screening policy:")
-        if include_if:
-            parts.append("- Include if: " + "; ".join(include_if))
-        if exclude_if:
-            parts.append("- Exclude if: " + "; ".join(exclude_if))
-        if domain_rules:
-            parts.append("- Domain rules: " + "; ".join(domain_rules))
+    parts.append("Screening policy:")
+    if include_if:
+        parts.append("- Include if: " + "; ".join(include_if))
+    if exclude_if:
+        parts.append("- Exclude if: " + "; ".join(exclude_if))
+    if domain_rules:
+        parts.append("- Domain rules: " + "; ".join(domain_rules))
     return " ".join(p for p in parts if p).strip()
 
-def load_vector_store(index_dir: Path) -> FAISS:
-    if not (index_dir / "index.faiss").exists():
-        vectorize_pdf()
-        #raise FileNotFoundError(f"FAISS index not found at {index_dir}. Build it first.")
+def find_existing_index(start_dir: Path) -> Optional[Path]:
+    try:
+        for p in start_dir.rglob("index.faiss"):
+            rel_depth = len(p.relative_to(start_dir).parts)
+            if rel_depth <= 4:
+                return p.parent
+    except Exception:
+        pass
+    return None
+
+def load_vector_store(default_index_dir: Path) -> FAISS:
+    index_dir: Optional[Path] = None
+
+    if VECTOR_DB_DIR_ENV:
+        candidate = Path(VECTOR_DB_DIR_ENV).expanduser().resolve()
+        if not (candidate / "index.faiss").exists():
+            vectorize_pdf()
+            #raise FileNotFoundError(f"VECTOR_DB_DIR points to '{candidate}', but index.faiss not found there.")
+        index_dir = candidate
+    elif (default_index_dir / "index.faiss").exists():
+        index_dir = default_index_dir
+    else:
+        found = find_existing_index(BASE_DIR)
+        if found:
+            index_dir = found
+            print(f"[info] Found FAISS index at: {index_dir}")
+        elif AUTO_BUILD:
+            try:
+                from preprocess_pdf import vectorize_pdf
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"No FAISS index and AUTO_BUILD is on, but cannot import preprocess_pdf.vectorize_pdf(): {e}"
+                )
+            print("[info] No FAISS index found; building via preprocess_pdf.vectorize_pdf() …")
+            vectorize_pdf()
+            if (default_index_dir / "index.faiss").exists():
+                index_dir = default_index_dir
+            else:
+                located = find_existing_index(BASE_DIR)
+                if not located:
+                    raise FileNotFoundError(
+                        "Attempted auto-build, but index.faiss still not found. "
+                        "Ensure vectorize_pdf() writes to vector_db or set VECTOR_DB_DIR."
+                    )
+                index_dir = located
+        else:
+            raise FileNotFoundError(
+                f"FAISS index not found at {default_index_dir}. "
+                f"Either set VECTOR_DB_DIR or enable AUTO_BUILD_VECTOR_DB=1."
+            )
+
+    print(f"[info] Using FAISS index at: {index_dir}")
+    print(f"[info] Loading embeddings model for retrieval: {EMBED_MODEL}")
     embeddings = HuggingFaceEmbeddings(model=EMBED_MODEL, show_progress=True)
     return FAISS.load_local(
         index_dir,
@@ -182,6 +228,7 @@ def call_llm(url: str, model: str, system_prompt: str, user_content: str,
         headers["Authorization"] = f"Bearer {api_key}"
     is_completions = url.rstrip("/").endswith("/v1/completions")
     if is_completions:
+        # Strongly recommend chat endpoint; but support text if needed
         payload = {
             "model": model,
             "prompt": f"System: {system_prompt}\n\nUser:\n{user_content}",
@@ -223,12 +270,10 @@ def chunk_text(s: str, limit: int) -> List[str]:
         start = end
     return parts
 
-# ---- Citation helpers ----
 def build_citation_key(meta: Dict, src_path: str, style: str, fallback: str) -> str:
     filename = Path(src_path).name
     if style == "filename":
         return filename
-    # Try to use metadata if available
     first_author = (meta.get("author") or meta.get("authors") or "")
     if isinstance(first_author, list) and first_author:
         first_author = first_author[0]
@@ -243,22 +288,16 @@ def build_citation_key(meta: Dict, src_path: str, style: str, fallback: str) -> 
         short_title = "_".join(title.split()[:4]) if title else ""
         key = (short_title + (year and f"_{year}" or "")).strip("_")
         return key if key else filename
-    # fallback
-    if fallback == "filename":
-        return filename
-    return filename
+    return filename if fallback == "filename" else filename
 
 # ---- Internal notes (hidden) ----
-def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, str]],
-                                cfg: Dict) -> Tuple[str, Dict]:
+def compress_single_paper_notes(source_name: str,
+                                chunks: List[Tuple[str, Dict, str]],
+                                system_prompt: str) -> Tuple[str, Dict]:
     """
     Returns (notes_text, meta_agg). notes_text are hidden bullet notes for one paper.
-    meta_agg is a merged metadata dict used for citations (best-effort).
+    meta_agg is merged metadata across chunks (best-effort).
     """
-    schema = cfg["extraction_schema"]
-    sys_prompt = build_system_prompt(cfg)
-
-    # merge metadata across chunks (last one wins)
     meta_agg: Dict = {}
     for _, m, _ in chunks:
         meta_agg.update(m or {})
@@ -268,6 +307,7 @@ def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, 
         if not txt.strip():
             continue
         for piece in chunk_text(txt, CHUNK_CHAR_LIMIT):
+            schema_bullets = os.linesep.join([f"- {item}" for item in EXTRACTION_SCHEMA])
             prompt = textwrap.dedent(f"""
             Prepare INTERNAL bullet NOTES (not public summaries) for a literature survey.
 
@@ -279,7 +319,7 @@ def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, 
             ---
 
             Follow this schema. Only bullets, terse factual items:
-            {os.linesep.join([f"- {item}" for item in schema])}
+            {schema_bullets}
 
             Also capture screening tags: INCLUDED/EXCLUDED with reason based on the policy.
             Do not write prose. Avoid redundancy across chunks; prefer compact bullets.
@@ -288,14 +328,17 @@ def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, 
             out = call_llm(
                 url=LLM_URL,
                 model=LLM_MODEL,
-                system_prompt=sys_prompt,
+                system_prompt=system_prompt,
                 user_content=prompt,
                 api_key=LLM_API_KEY,
                 max_tokens=MAX_OUTPUT_TOKENS_NOTES
             )
             notes_list.append(out.strip())
 
-    merged = "\n\n".join(notes_list)
+    merged = "\n\n".join(notes_list) if notes_list else ""
+    if not merged:
+        return "", meta_agg
+
     dedupe_prompt = textwrap.dedent(f"""
     Merge and deduplicate the INTERNAL bullet NOTES for the paper {Path(source_name).name}.
 
@@ -314,7 +357,7 @@ def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, 
     final_notes = call_llm(
         url=LLM_URL,
         model=LLM_MODEL,
-        system_prompt=sys_prompt,
+        system_prompt=system_prompt,
         user_content=dedupe_prompt,
         api_key=LLM_API_KEY,
         max_tokens=min(MAX_OUTPUT_TOKENS_NOTES, 900)
@@ -324,23 +367,18 @@ def compress_single_paper_notes(source_name: str, chunks: List[Tuple[str, Dict, 
 # ---- Synthesis into a single survey ----
 def synthesize_survey(all_notes: Dict[str, str],
                       all_meta: Dict[str, Dict],
-                      cfg: Dict) -> str:
-    outline = cfg["survey_outline"]
-    sys_prompt = build_system_prompt(cfg)
-    cit_style = cfg["citation"]["style"]
-    cit_fallback = cfg["citation"].get("fallback", "filename")
+                      system_prompt: str) -> str:
+    outline = SURVEY_OUTLINE
+    cit_style = CITATION_STYLE
+    cit_fallback = CITATION_FALLBACK
 
-    # Convert sources -> citation keys and pack notes
     packet_parts = []
-    key_map = {}
     for src, notes in all_notes.items():
         key = build_citation_key(all_meta.get(src, {}), src, cit_style, cit_fallback)
-        key_map[src] = key
         packet_parts.append(f"[{key}]\n{notes}\n")
     notes_packet = "\n".join(packet_parts)
 
     structure_text = "\n".join(f"- {sec}" for sec in outline)
-    title_override = cfg.get("title_override")
 
     survey_prompt = textwrap.dedent(f"""
     Write ONE integrated scholarly survey (no per-paper summaries) using the INTERNAL NOTES below.
@@ -352,7 +390,7 @@ def synthesize_survey(all_notes: Dict[str, str],
     - Follow the outline EXACTLY.
     - "References" should list cited keys (one per line). Do not fabricate metadata.
 
-    {"Use this title: " + title_override if title_override else "Begin with an apt, succinct title."}
+    {"Use this title: " + TITLE_OVERRIDE if TITLE_OVERRIDE else "Begin with an apt, succinct title."}
 
     OUTLINE:
     {structure_text}
@@ -366,15 +404,15 @@ def synthesize_survey(all_notes: Dict[str, str],
     survey_md = call_llm(
         url=LLM_URL,
         model=LLM_MODEL,
-        system_prompt=sys_prompt,
+        system_prompt=system_prompt,
         user_content=survey_prompt,
         api_key=LLM_API_KEY,
         max_tokens=MAX_OUTPUT_TOKENS_SURVEY
     )
     return survey_md.strip()
 
-# ---- Minimal Markdown -> LaTeX (optional) ----
-def md_to_basic_latex(md_text: str, default_title: str = "Survey") -> str:
+# ---- Minimal Markdown -> LaTeX (optional; off by default) ----
+def md_to_basic_latex(md_text: str, default_title: str = "Integrated Literature Survey") -> str:
     lines = md_text.splitlines()
     out = []
     for ln in lines:
@@ -414,46 +452,51 @@ def md_to_basic_latex(md_text: str, default_title: str = "Survey") -> str:
 # ------------------------- Main -------------------------
 def main():
     load_dotenv()
-    cfg = load_yaml_config(CONFIG_PATH)
+    print(str(BASE_DIR))
+    print(str(DEFAULT_INDEX_DIR))
+    print(str(BASE_DIR / "data"))
+
+    system_prompt = build_system_prompt()
 
     print("Loading FAISS…")
-    vs = load_vector_store(INDEX_DIR)
+    vs = load_vector_store(DEFAULT_INDEX_DIR)
 
     print("Reading documents…")
     docs = extract_all_docs(vs)
     grouped = group_by_source(docs)
     print(f"Found {len(grouped)} sources.")
 
-    # Build internal notes per source
     all_notes: Dict[str, str] = {}
     all_meta: Dict[str, Dict]  = {}
 
     for i, (src, chunks) in enumerate(grouped.items(), start=1):
         print(f"[{i}/{len(grouped)}] Compressing -> {Path(src).name}")
         try:
-            notes, meta = compress_single_paper_notes(src, chunks, cfg)
-            all_notes[src] = notes
-            all_meta[src]  = meta
+            notes, meta = compress_single_paper_notes(src, chunks, system_prompt)
+            if notes:
+                all_notes[src] = notes
+                all_meta[src]  = meta
+            else:
+                print(f"   (no notes produced for {Path(src).name})")
         except Exception as e:
-            print(f"!! Error on {src}: {e}")
+            print(f"!! Error on {Path(src).name}: {e}")
 
     if not all_notes:
-        raise RuntimeError("No notes produced—check index content or config.")
+        raise RuntimeError("No notes produced—check index content, budgets, and LLM endpoint.")
 
     print("Synthesizing single survey…")
-    survey_md = synthesize_survey(all_notes, all_meta, cfg)
+    survey_md = synthesize_survey(all_notes, all_meta, system_prompt)
 
-    ts = time.strftime("%Y-%m-%d_%H-%M-%S")
-    md_path  = OUTPUT_DIR / f"{SURVEY_BASENAME}_{ts}.md"
-    tex_path = OUTPUT_DIR / f"{SURVEY_BASENAME}_{ts}.tex"
+    # Overwrite stable filename (no timestamp). Single output by design.
+    md_path  = OUTPUT_DIR / f"{SURVEY_BASENAME}.md"
+    tex_path = OUTPUT_DIR / f"{SURVEY_BASENAME}.tex"
 
     if WRITE_MARKDOWN:
         md_path.write_text(survey_md, encoding="utf-8")
         print(f"[OK] Markdown survey -> {md_path}")
 
     if WRITE_LATEX:
-        title_guess = cfg.get("title_override") or "Integrated Literature Survey"
-        tex = md_to_basic_latex(survey_md, default_title=title_guess)
+        tex = md_to_basic_latex(survey_md, default_title=TITLE_OVERRIDE or "Integrated Literature Survey")
         tex_path.write_text(tex, encoding="utf-8")
         print(f"[OK] LaTeX survey    -> {tex_path}")
 
