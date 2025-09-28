@@ -51,7 +51,7 @@ LLM_URL     = os.environ.get("LLM_URL",   "http://192.168.0.213:8080/v1/completi
 LLM_MODEL   = os.environ.get("LLM_MODEL", "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8")
 LLM_API_KEY = os.environ.get("LLM_API_KEY")  # often not needed for local
 
-TIMEOUT_SECONDS = int(os.environ.get("TIMEOUT_SECONDS", "600"))
+TIMEOUT_SECONDS = int(os.environ.get("TIMEOUT_SECONDS", "1000"))
 
 # Budgets (sane defaults to avoid server 500s)
 MAX_OUTPUT_TOKENS_NOTES  = int(os.environ.get("MAX_OUTPUT_TOKENS_NOTES", "200000"))
@@ -104,16 +104,12 @@ SURVEY_OUTLINE = [
     "Title",
     "Abstract",
     "1. Introduction",
-    "2. Background and Definitions",
-    "3. Corpus and Screening Criteria",
-    "4. Taxonomy of Approaches / Study Designs",
-    "5. Methods and Evaluation Protocols",
-    "6. Results and Cross-Study Synthesis",
-    "7. Confounders and Threats to Validity",
-    "8. Methodological Pitfalls and Bias",
-    "9. Open Problems and Future Directions",
-    "10. Limitations",
-    "11. Conclusion",
+    "2. Background and Motivation",
+    "3. Materials and Methods",
+    "4. Experimental Procedure",
+    "5. Results Discussion",
+    "6. Open Problems and Future Directions",
+    "7. Conclusion",
     "References"
 ]
 
